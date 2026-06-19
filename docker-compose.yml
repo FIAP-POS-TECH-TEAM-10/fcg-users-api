@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: meu_rabbitmq
+    ports:
+      - "5672:5672"   # Porta de comunicação da mensageria
+      - "15672:15672" # Painel web de gerenciamento
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  microsservico:
+    image: UsersAPI:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/app.db
+      - ConnectionStrings__RabbitMqConnection=amqp://guest:guest@rabbitmq:5672
+    volumes:
+      - sqlite_data:/app/data # Volume para persistir o banco SQLite
+    depends_on:
+      - rabbitmq
+
+volumes:
+  sqlite_data: # Define o volume persistente

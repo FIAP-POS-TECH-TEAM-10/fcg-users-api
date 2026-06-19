@@ -1,25 +1,23 @@
 ﻿using Fiap.Users.Application.Commands.AtualizarUsuario;
 using Fiap.Users.Application.Commands.CriarUsuario;
 using Fiap.Users.Application.Commands.Login;
-using Fiap.Users.Application.Queries;
 using Fiap.Users.Application.Queries.BuscarUsuarioPorId;
 using Fiap.Users.Application.Queries.ListarUsuarios;
-using Fiap.UsersApi.Domain.Contants;
+using Fiap.Users.Domain.Aggregates;
 using Fiap.UsersApi.Domain.Exceptions;
+using MassTransit;
 using MediatR;
-using Microsoft.AspNetCore.Authentication.OAuth;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Runtime.ExceptionServices;
-using System.Threading.Tasks;
 using UsersApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class UsuariosController: ApiControllerBase<UsuariosController>
 {
-    public UsuariosController(ISender sender, ILogger<UsuariosController> logger) : base(sender, logger)
+    private readonly IPublishEndpoint _publishEndpoint;
+    public UsuariosController(ISender sender, ILogger<UsuariosController> logger, IPublishEndpoint publishEndpoint) : base(sender, logger)
     {
+        _publishEndpoint = publishEndpoint;
     }
 
     [HttpPost]
@@ -66,6 +64,8 @@ public class UsuariosController: ApiControllerBase<UsuariosController>
         try
         {
             var result = await _sender.Send(command);
+            if(result != null) 
+                await _publishEndpoint.Publish(new UsuarioLogadoEvent(command.Usuario, result.Token, result.LoginExpiracao));
             _logger.LogInformation("Login realizado com sucesso para usuario {Usuario}", command.Usuario);
             return Ok(result);
         }

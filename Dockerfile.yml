@@ -1,0 +1,27 @@
+# Etapa de compilação
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+# 1. Copia os arquivos de projeto (.csproj) respeitando as pastas
+COPY ["UsersAPI/UsersAPI.csproj", "UsersAPI/"]
+COPY ["Fiap.Users.Domain/Fiap.Users.Domain.csproj", "Fiap.Users.Domain/"]
+COPY ["Fiap.Users.Repository/Fiap.Users.Infra.csproj", "Fiap.Users.Infra/"]
+COPY ["Fiap.Users.Application/Fiap.Users.Application.csproj", "Fiap.Users.Application/"]
+
+# 2. Restaura as dependências
+RUN dotnet restore "UsersAPI/UsersAPI.csproj"
+
+# 3. Copia o resto do código
+COPY . .
+
+# 4. Compila e publica apontando para o projeto da API
+WORKDIR "/src/UsersAPI"
+RUN dotnet publish "UsersAPI.csproj" -c Release -o /app/publish
+
+# Etapa de execução
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+RUN mkdir -p /app/data
+COPY --from=build /app/publish .
+VOLUME /app/data
+ENTRYPOINT ["dotnet", "UsersApi.dll"]
