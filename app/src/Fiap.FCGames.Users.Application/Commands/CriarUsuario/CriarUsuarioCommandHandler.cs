@@ -49,17 +49,17 @@ public class CriarUsuarioCommandHandler : IRequestHandler<CriarUsuarioCommand, C
 
         try
         {
-            await _publishEndpoint.Publish(new UserCreatedEvent(
-                UserId: usuario.Id.Value,
+            await _publishEndpoint.Publish(new UsuarioCriadoEvento(
+                UsuarioId: usuario.Id.Value,
                 Nome: usuario.Nome,
                 Email: usuario.Email,
-                CreatedAtUtc: usuario.CriadoEm,
+                CriadoEmUtc: usuario.CriadoEm,
                 CorrelationId: Guid.NewGuid()),
                 cancellationToken);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Falha ao publicar UserCreatedEvent para usuário {UserId}. Cadastro concluído.", usuario.Id.Value);
+            _logger.LogError(ex, "Falha ao publicar UsuarioCriadoEvento para usuário {UsuarioId}. Cadastro concluído.", usuario.Id.Value);
         }
 
         return new CriarUsuarioResponse
