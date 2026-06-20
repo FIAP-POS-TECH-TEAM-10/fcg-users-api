@@ -53,6 +53,8 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
 
+Log.Information("FCGames UsersAPI iniciada em {Urls}", string.Join(", ", app.Urls.DefaultIfEmpty("http://localhost:5000")));
+
 app.Run();
 
 static async Task SeedAdminAsync(IServiceProvider services)
