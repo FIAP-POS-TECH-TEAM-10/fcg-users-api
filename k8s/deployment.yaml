@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: users-api
+  namespace: fcgames
+  labels:
+    app: users-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: users-api
+  template:
+    metadata:
+      labels:
+        app: users-api
+    spec:
+      containers:
+      - name: users-api
+        image: fcg-users-api:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5001
+          name: http
+        env:
+        - name: ASPNETCORE_URLS
+          valueFrom:
+            configMapKeyRef:
+              name: users-api-config
+              key: aspnetcore-urls
+        - name: ConnectionStrings__DefaultConnection
+          valueFrom:
+            secretKeyRef:
+              name: users-api-secret
+              key: db-connection
+        - name: RabbitMQ__Host
+          valueFrom:
+            configMapKeyRef:
+              name: users-api-config
+              key: rabbitmq-host
+        - name: RabbitMQ__Username
+          valueFrom:
+            secretKeyRef:
+              name: users-api-secret
+              key: rabbitmq-username
+        - name: RabbitMQ__Password
+          valueFrom:
+            secretKeyRef:
+              name: users-api-secret
+              key: rabbitmq-password
+        - name: JWT__KEY
+          valueFrom:
+            secretKeyRef:
+              name: users-api-secret
+              key: jwt-key
+        - name: JWT__ISSUER
+          valueFrom:
+            configMapKeyRef:
+              name: users-api-config
+              key: jwt-issuer
+        volumeMounts:
+        - name: users-data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5001
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: users-data
+        persistentVolumeClaim:
+          claimName: users-api-pvc
