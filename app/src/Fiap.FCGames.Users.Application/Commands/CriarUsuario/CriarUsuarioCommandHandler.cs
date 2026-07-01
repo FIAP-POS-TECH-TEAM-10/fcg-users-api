@@ -5,7 +5,6 @@ using Fiap.FCGames.Users.Domain.Interfaces;
 using Fiap.FCGames.Users.Domain.Services;
 using MassTransit;
 using MediatR;
-using Microsoft.Extensions.Logging;
 
 namespace Fiap.FCGames.Users.Application.Commands.CriarUsuario;
 
@@ -14,18 +13,15 @@ public class CriarUsuarioCommandHandler : IRequestHandler<CriarUsuarioCommand, C
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPasswordHasherService _passwordHasher;
     private readonly IPublishEndpoint _publishEndpoint;
-    private readonly ILogger<CriarUsuarioCommandHandler> _logger;
 
     public CriarUsuarioCommandHandler(
         IUnitOfWork unitOfWork,
         IPasswordHasherService passwordHasher,
-        IPublishEndpoint publishEndpoint,
-        ILogger<CriarUsuarioCommandHandler> logger)
+        IPublishEndpoint publishEndpoint)
     {
         _unitOfWork = unitOfWork;
         _passwordHasher = passwordHasher;
         _publishEndpoint = publishEndpoint;
-        _logger = logger;
     }
 
     public async Task<CriarUsuarioResponse> Handle(CriarUsuarioCommand request, CancellationToken cancellationToken)
