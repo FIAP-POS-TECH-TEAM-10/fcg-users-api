@@ -5,7 +5,6 @@ using Fiap.FCGames.Users.Domain.Interfaces;
 using Fiap.FCGames.Users.Domain.Services;
 using MassTransit;
 using MediatR;
-using Microsoft.Extensions.Logging;
 
 namespace Fiap.FCGames.Users.Application.Commands.CriarUsuario;
 
@@ -14,18 +13,15 @@ public class CriarUsuarioCommandHandler : IRequestHandler<CriarUsuarioCommand, C
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPasswordHasherService _passwordHasher;
     private readonly IPublishEndpoint _publishEndpoint;
-    private readonly ILogger<CriarUsuarioCommandHandler> _logger;
 
     public CriarUsuarioCommandHandler(
         IUnitOfWork unitOfWork,
         IPasswordHasherService passwordHasher,
-        IPublishEndpoint publishEndpoint,
-        ILogger<CriarUsuarioCommandHandler> logger)
+        IPublishEndpoint publishEndpoint)
     {
         _unitOfWork = unitOfWork;
         _passwordHasher = passwordHasher;
         _publishEndpoint = publishEndpoint;
-        _logger = logger;
     }
 
     public async Task<CriarUsuarioResponse> Handle(CriarUsuarioCommand request, CancellationToken cancellationToken)
@@ -45,22 +41,16 @@ public class CriarUsuarioCommandHandler : IRequestHandler<CriarUsuarioCommand, C
         };
 
         _unitOfWork.UsuarioRepository.Adicionar(usuario);
-        await _unitOfWork.CommitAsync(cancellationToken);
 
-        try
-        {
-            await _publishEndpoint.Publish(new UsuarioCriadoEvento(
-                UsuarioId: usuario.Id.Value,
-                Nome: usuario.Nome,
-                Email: usuario.Email,
-                CriadoEmUtc: usuario.CriadoEm,
-                CorrelationId: Guid.NewGuid()),
-                cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Falha ao publicar UsuarioCriadoEvento para usuário {UsuarioId}. Cadastro concluído.", usuario.Id.Value);
-        }
+        await _publishEndpoint.Publish(new UsuarioCriadoEvento(
+            UsuarioId: usuario.Id.Value,
+            Nome: usuario.Nome,
+            Email: usuario.Email,
+            CriadoEmUtc: usuario.CriadoEm,
+            CorrelationId: Guid.NewGuid()),
+            cancellationToken);
+
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         return new CriarUsuarioResponse
         {
